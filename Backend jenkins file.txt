@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    tools {
+        maven "Maven"
+        jdk "JDK"
+    }
+
+    stages {
+        stage('checkout') {
+            steps {
+                git credentialsId: 'github-integration', url: 'https://github.com/brandlogs-team/user-service.git'
+            }
+        }
+        stage ('build docker image') {
+            steps {
+                sh "mvn compile jib:dockerBuild"
+                
+            }
+        }
+        stage ('Docker push') {
+            steps{ 
+                script{
+                    docker.withRegistry('https://994509955527.dkr.ecr.us-west-1.amazonaws.com', 'ecr:us-west-1:AWS-jenkins') {
+                        docker.image('brandlogs/user-service').push('latest')    
+                    }
+                }
+            }
+        }
+        stage ('Deploy on ECS') {
+            steps{
+                sh 'aws ecs update-service --cluster Updated-cluster --desired-count 1 --service backend-service --task-definition Backend-updated-cluster-TD:1 --force-new-deployment'
+            }
+        }
+    }
+}

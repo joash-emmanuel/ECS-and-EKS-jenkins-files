@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    stages{
+        stage ('checkout'){
+            steps{
+                git credentialsId: 'github-integration', url: 'https://github.com/brandlogs-team/Frontend.git'
+            }
+
+        }
+
+        stage ('docker build') {
+            steps{
+                script{
+                    docker.build('brandlogs-frontend') 
+                }
+               
+            }
+        }
+
+        stage ('push to ecr') {
+            steps{ 
+                script{
+                    docker.withRegistry('https://994509955527.dkr.ecr.us-west-1.amazonaws.com', 'ecr:us-west-1:AWS-jenkins') {
+                        docker.image('brandlogs-frontend').push('latest')    
+                    }
+                }
+            }
+        }
+        stage ('Deploy on ECS') {
+            steps{
+                sh 'aws ecs update-service --cluster Updated-cluster --desired-count 1 --service backend-service --task-definition Backend-updated-cluster-TD:1 --force-new-deployment'
+            }
+        }
+    }
+}
