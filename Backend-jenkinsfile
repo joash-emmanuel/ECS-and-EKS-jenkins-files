@@ -33,3 +33,7 @@ pipeline {
         }
     }
 }
+
+jdk(the way jdk is on download) JDK (how i have saved my JDK on tools config)
+maven                           Maven
+
